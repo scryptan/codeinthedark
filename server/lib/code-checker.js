@@ -1,97 +1,187 @@
-import https from "https";
 import crypto from "crypto";
+import { copyFile, mkdtemp, rm, writeFile } from "fs/promises";
+import { tmpdir } from "os";
+import { dirname, join, resolve } from "path";
+import { fileURLToPath } from "url";
+import { GenericContainer } from "testcontainers";
+import { getFileContents } from "./tasks.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const RUNNER_SOURCE = resolve(__dirname, "python-runner.py");
+
+const PROCESSING_RESULT = {
+  status: "processing",
+  tests: null,
+  logs: null,
+};
 
 export class CodeChecker {
-    constructor(token) {
-        this.token = token;
+  constructor() {
+    this.results = new Map();
+    this.dockerImage = process.env.PYTHON_DOCKER_IMAGE || "python:3.12-alpine";
+    this.timeoutMs = Number(process.env.CODE_CHECK_TIMEOUT_MS || 10000);
+    this.maxLogLength = Number(process.env.CODE_CHECK_MAX_LOG_LENGTH || 10000);
+  }
+
+  run(code, taskId) {
+    const requestId = crypto.randomUUID();
+    this.results.set(requestId, PROCESSING_RESULT);
+    this.execute(requestId, code, taskId);
+    return requestId;
+  }
+
+  async getResult(requestId) {
+    return this.results.get(requestId) || {
+      status: "runtimeError",
+      tests: null,
+      logs: ["Unknown request id"],
+    };
+  }
+
+  async execute(requestId, code, taskId) {
+    let workspacePath;
+
+    try {
+      workspacePath = await mkdtemp(join(tmpdir(), "codeinthedark-"));
+
+      const testsPy = await getFileContents(taskId, "tests.py", "utf-8");
+      await writeFile(join(workspacePath, "solution.py"), code, "utf-8");
+      await writeFile(join(workspacePath, "tests.py"), testsPy, "utf-8");
+      await copyFile(RUNNER_SOURCE, join(workspacePath, "runner.py"));
+
+      const runResult = await this.runContainer(workspacePath);
+
+      if (runResult.timedOut) {
+        this.results.set(requestId, {
+          status: "timeLimit",
+          tests: null,
+          logs: ["Execution timed out"],
+        });
+        return;
+      }
+
+      const result = this.parseRunnerResult(runResult.stdout, runResult.stderr);
+      this.results.set(requestId, result);
+    } catch (error) {
+      this.results.set(requestId, {
+        status: "runtimeError",
+        tests: null,
+        logs: this.limitLogs([error?.message || String(error)]),
+      });
+    } finally {
+      if (workspacePath) {
+        await rm(workspacePath, { recursive: true, force: true });
+      }
+    }
+  }
+
+  runContainer(workspacePath) {
+    return this.runInTestcontainer(workspacePath);
+  }
+
+  async runInTestcontainer(workspacePath) {
+    let container;
+
+    try {
+      container = await new GenericContainer(this.dockerImage)
+        .withEnvironment({ PYTHONDONTWRITEBYTECODE: "1" })
+        .withWorkingDir("/workspace")
+        .withBindMounts([{ source: workspacePath, target: "/workspace", mode: "rw" }])
+        .withNetworkMode("none")
+        .withCommand(["sh", "-c", "sleep 300"])
+        .start();
+
+      const execution = container.exec(["python", "runner.py"]);
+      const timedExecution = await this.withTimeout(execution, this.timeoutMs);
+      if (timedExecution.timedOut) {
+        return { timedOut: true, stdout: "", stderr: "Execution timed out" };
+      }
+
+      const execResult = timedExecution.result || {};
+      const stdout = execResult.output || execResult.stdout || "";
+      const stderrOutput = execResult.stderr || "";
+      const exitCode = execResult.exitCode;
+
+      if (exitCode === 0) {
+        return { timedOut: false, stdout, stderr: stderrOutput };
+      }
+
+      return {
+        timedOut: false,
+        stdout,
+        stderr: stderrOutput || `Runner exited with code ${exitCode}`,
+      };
+    } finally {
+      if (container) {
+        await container.stop();
+      }
+    }
+  }
+
+  async withTimeout(promise, timeoutMs) {
+    const timeoutPromise = new Promise((resolve) => {
+      setTimeout(() => resolve({ timedOut: true }), timeoutMs);
+    });
+
+    const result = await Promise.race([
+      promise.then((value) => ({ timedOut: false, result: value })),
+      timeoutPromise,
+    ]);
+
+    return result;
+  }
+
+  parseRunnerResult(stdout, stderr) {
+    const output = stdout.trim();
+    if (!output) {
+      return {
+        status: "runtimeError",
+        tests: null,
+        logs: this.limitLogs([stderr || "No output from checker"]),
+      };
     }
 
-    run(zip) {
-        var requestId = crypto.randomUUID();
-        console.log('Start run code check with id ' + requestId);
+    try {
+      const jsonLine = output.split(/\r?\n/).filter(Boolean).at(-1);
+      const parsed = JSON.parse(jsonLine);
+      const tests = Array.isArray(parsed.tests)
+        ? parsed.tests.map((test) => ({ isPassed: Boolean(test?.isPassed) }))
+        : null;
 
-        var solution = {
-            zip: zip,
-            launchInfo: {
-                solutionName: 'CodeInTheDark',
-                dockerImageName: 'ulearn-dotnet8-sandbox',
-                timeLimitSeconds: 100
-            }
-        };
-        var data = JSON.stringify(solution);
-        var options = {
-            hostname: 'code-checker.testkontur.ru',
-            port: 443,
-            path: '/api/v1/teams/dotnext-challenge/solution-zips/' + requestId,
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': data.length,
-                'Authorization': 'Bearer ' + this.token
-            }
-        };
-        const request = https.request(
-            options, (response) => {
-                console.log('Response Status Code :>> ', response.statusCode);
+      const logs = Array.isArray(parsed.logs)
+        ? parsed.logs.map((x) => String(x))
+        : [];
 
-                response.on('data', (chunk) => {
-                    console.log(`Data arrived: ${chunk.toString()}`);
-                });
+      if (stderr) {
+        logs.push(stderr);
+      }
 
-                response.on('error', (err) => {
-                    console.log('Response error :>> ', err);
-                })
+      return {
+        status: typeof parsed.status === "string" ? parsed.status : "runtimeError",
+        tests,
+        logs: this.limitLogs(logs),
+      };
+    } catch {
+      return {
+        status: "runtimeError",
+        tests: null,
+        logs: this.limitLogs(["Failed to parse checker output", output, stderr]),
+      };
+    }
+  }
 
-            });
-
-        request.write(data);
-        request.end();
-
-        return requestId;
+  limitLogs(logs) {
+    const joined = (logs || []).filter(Boolean).join("\n");
+    if (!joined) {
+      return null;
     }
 
-    async getResult(requestId) {
-        return new Promise((resolve, reject) => {
-            var options = {
-                hostname: 'code-checker.testkontur.ru',
-                port: 443,
-                path: '/api/v1/solution-result/' + requestId,
-                method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + this.token
-                }
-            };
-            const request = https.request(
-                options, (response) => {
-                    console.log('Response Status Code :>> ', response.statusCode);
-
-                    let data = ''
-
-                    response.on('data', (chunk) => {
-                        console.log(`Data arrived: ${chunk.toString()}`);
-                        data += chunk;
-                    });
-
-                    response.on('end', () => {
-                        try {
-                            var result = JSON.parse(data);
-                            console.log('Response Body:', result);
-                            resolve(result)
-                        } catch (e) {
-                            console.error('Error parsing JSON:', e.message);
-                            console.log('Raw Response Body:', rawData); // Fallback to raw data
-                            reject(e);
-                        }
-                    });
-
-                    response.on('error', (err) => {
-                        console.log('Response error :>> ', err);
-                        reject(err);
-                    })
-
-                });
-
-            request.end();
-        })
+    if (joined.length <= this.maxLogLength) {
+      return [joined];
     }
+
+    return [`${joined.slice(0, this.maxLogLength)}\n... [logs truncated]`];
+  }
 }

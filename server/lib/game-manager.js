@@ -29,15 +29,22 @@ export class GameManager {
   }
 
   setCodeCheckerResult(player, result) {
-    if (!result || !result.status || result.status === 'processing') {
-      this.codeCheckerResults[player] = "";
+    const playerId = Number(player);
+    if (playerId !== 1 && playerId !== 2) {
       return;
     }
 
-    this.codeCheckerResults[player] = {
+    if (!result || !result.status || result.status === 'processing') {
+      this.codeCheckerResults[playerId] = "";
+      return;
+    }
+
+    const hasErrorLogs = result.status !== "testsPassed" && Array.isArray(result.logs) && result.logs.length > 0;
+
+    this.codeCheckerResults[playerId] = {
       status: result.status,
       isSussesful: result.status === "testsPassed",
-      error: result.logs === null ? null : result.logs.map(str => str.replace(/\n/g, ' ')).join('\n'),
+      error: hasErrorLogs ? result.logs.map(str => str.replace(/\n/g, ' ')).join('\n') : null,
       testsResult: result.tests === null ? null : this.countPassedElements(result.tests),
     };
   }

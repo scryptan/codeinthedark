@@ -4,13 +4,12 @@ import { GameManager } from "./lib/game-manager.js";
 import { TASKS_DIR, getTasks, checkTask, getFileContents } from "./lib/tasks.js";
 import { adminAuth } from "./lib/password.js";
 import { CodeChecker } from "./lib/code-checker.js";
-import { zip } from "./lib/solution-zip.js";
 import { getLocalIP } from "./lib/localIp.js";
 
 dotenv.config({ path: "../.env" });
 
 const game = new GameManager();
-const checker = new CodeChecker(process.env.CODE_CHECKER_TOKEN);
+const checker = new CodeChecker();
 const app = express();
 const PORT = process.env.SERVER_PORT || 4747;
 const LOCAL_IP = process.env.SERVER_IP || '127.0.0.1';
@@ -80,14 +79,23 @@ apiRouter.post("/run", async (req, res) => {
     return res.status(400).send("Invalid code data");
   }
 
-  const solutionZip = await zip(code, game.getState().taskId);
-  var requestId = checker.run(solutionZip);
+  const state = game.getState();
+  if (!state.taskId) {
+    return res.status(400).send("No active task");
+  }
+
+  const requestId = checker.run(code, state.taskId);
   res.json({ requestId });
 });
 
 apiRouter.get("/runResult", async (req, res) => {
+  const playerId = Number(req.query.playerId);
+  if (playerId !== 1 && playerId !== 2) {
+    return res.status(400).send("Unknown player");
+  }
+
   const checkResult = await checker.getResult(req.query.requestId);
-  game.setCodeCheckerResult(req.query.playerId, checkResult);
+  game.setCodeCheckerResult(playerId, checkResult);
   res.json(checkResult);
 });
 

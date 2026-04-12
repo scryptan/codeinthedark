@@ -25,7 +25,7 @@ self.MonacoEnvironment = {
 
 const editor = monaco.editor.create(document.getElementById("editor"), {
   // value: localStorage.getItem("value"),
-  language: "csharp",
+  language: "python",
   theme: "vs-dark",
   fontSize: 14,
   automaticLayout: true,
@@ -111,5 +111,5 @@ function waitReult(requestId) {
       console.error('Error during polling:', error);
       clearInterval(pollingId); // Stop polling on error
     }
-  }, 1000)
+  }, 200)
 }

@@ -1,18 +1,17 @@
 import { formatTime } from "../utils/formatTime";
 import * as monaco from "monaco-editor";
 import { emmetHTML } from "emmet-monaco-es";
-import simplifyCSharpCode from "../utils/simplifyCSharpCode";
 emmetHTML(monaco);
 
 function updatePlayerResult(result, element) {
   if (result && result.isSussesful) {
     element.textContent = `✔ Tests passed!`;
     element.className = `player-result-success`;
-  } else if (result && result.status === 'testsFailed') {
+  } else if (result && result.status === "wrongAnswer") {
     element.textContent = `✘ Tests failed! Passed ${result.testsResult.passed} from ${result.testsResult.total}`;
     element.className = `player-result-test-failed`;
-  } else if (result && result.status === 'sandboxError') {
-    element.textContent = `⚠ Compilation/Runtime error`;
+  } else if (result && (result.status === "runtimeError" || result.status === "timeLimit")) {
+    element.textContent = `⚠ Runtime error`;
     element.className = `player-result-error`;
   } else {
     element.className = `player-no-result`;
@@ -30,7 +29,7 @@ let currentTaskId = null;
 let lastCodes = { 1: "", 2: "" };
 
 const editorOptions = {
-  language: "csharp",
+  language: "python",
   theme: "vs-dark",
   fontSize: 15,
   tabSize: 2,
@@ -69,11 +68,11 @@ function poll() {
       }
       if (state.codes[1] !== lastCodes[1]) {
         lastCodes[1] = state.codes[1];
-        editor1.setValue(simplifyCSharpCode(lastCodes[1]));
+        editor1.setValue(lastCodes[1]);
       }
       if (state.codes[2] !== lastCodes[2]) {
         lastCodes[2] = state.codes[2];
-        editor2.setValue(simplifyCSharpCode(lastCodes[2]));
+        editor2.setValue(lastCodes[2]);
       }
 
       updatePlayerResult(state.codeCheckerResults[1], player1Result);
