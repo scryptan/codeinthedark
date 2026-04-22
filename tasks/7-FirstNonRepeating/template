@@ -1,12 +1,6 @@
-namespace Task7;
+from typing import Optional
 
-// Пожалуйста, не меняй название класса
-public static class Solution
-{
-    // Пожалуйста, не меняй сигнатуру метода Solve
-    public static char? Solve(string input)
-    {
-        // Место для решения
 
-    }
-}
+def solve(input_string: str) -> Optional[str]:
+    # TODO: implement solution
+    pass

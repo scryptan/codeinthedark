@@ -1,6 +1,3 @@
-import re
-
-
 def solve(input_string: str) -> bool:
     # TODO: implement solution
     pass

@@ -1,13 +1,6 @@
-using System.Text;
+from typing import List
 
-namespace Task2;
 
-// Пожалуйста, не меняй название класса
-public static class Solution
-{
-    // Пожалуйста, не меняй сигнатуру метода Solve
-    public static int Solve(int[] input)
-    {
-        // Место для решения
-    }
-}
+def solve(input_array: List[int]) -> int:
+    # TODO: implement solution
+    pass
