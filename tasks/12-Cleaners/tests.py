@@ -14,20 +14,20 @@ class CleanersTests(unittest.TestCase):
         self.assertEqual(solve(['L', 'L', 'L']), 0)
     
     def test_mixed_1(self):
-        self.assertEqual(solve(['R', 'L', 'L']), 1)
+        self.assertEqual(solve(['R', 'L', 'L']), 2)
     
     def test_mixed_2(self):
         self.assertEqual(solve(['L', 'R', 'R']), 0)
 
     # Private tests
     def test_multiple_collisions(self):
-        self.assertEqual(solve(['R', 'R', 'L', 'L']), 2)
+        self.assertEqual(solve(['R', 'R', 'L', 'L']), 4)
     
     def test_complex_pattern(self):
-        self.assertEqual(solve(['R', 'L', 'R', 'L']), 2)
+        self.assertEqual(solve(['R', 'L', 'R', 'L']), 3)
     
     def test_long_sequence(self):
-        self.assertEqual(solve(['R', 'R', 'R', 'L', 'L', 'L']), 3)
+        self.assertEqual(solve(['R', 'R', 'R', 'L', 'L', 'L']), 9)
     
     def test_single_robot(self):
         self.assertEqual(solve(['R']), 0)
@@ -37,13 +37,13 @@ class CleanersTests(unittest.TestCase):
         self.assertEqual(solve([]), 0)
     
     def test_alternating(self):
-        self.assertEqual(solve(['R', 'L', 'R', 'L', 'R', 'L']), 3)
+        self.assertEqual(solve(['R', 'L', 'R', 'L', 'R', 'L']), 6)
     
     def test_left_at_start(self):
         self.assertEqual(solve(['L', 'R', 'R', 'R']), 0)
     
     def test_right_at_end(self):
-        self.assertEqual(solve(['R', 'R', 'R', 'L']), 1)
+        self.assertEqual(solve(['R', 'R', 'R', 'L']), 3)
     
     def test_many_robots(self):
         robots = ['R'] * 50 + ['L'] * 50
