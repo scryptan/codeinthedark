@@ -7,8 +7,3 @@ def solve(input_array: list[str]) -> int:
         if input_array[i] == 'R' and i > max_right:
             max_right = i
     return max(len(input_array) - min_left, max_right + 1)
-
-# LRRRLLL 7
-# RRLLLR 6
-# L 1
-# RRRLL 3
