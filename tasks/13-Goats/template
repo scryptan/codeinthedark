@@ -1,2 +1,2 @@
-def solve(input_array: list[str]) -> int:
+def solve(n: int, input_array: list[(int, str)]) -> int:
     pass
