@@ -44,7 +44,8 @@ export class GameManager {
     this.codeCheckerResults[playerId] = {
       status: result.status,
       isSussesful: result.status === "testsPassed",
-      error: hasErrorLogs ? result.logs.map(str => str.replace(/\n/g, ' ')).join('\n') : null,
+      // Preserve newlines so we can show multi-line case list.
+      error: hasErrorLogs ? result.logs.join("\n") : null,
       testsResult: result.tests === null ? null : this.countPassedElements(result.tests),
     };
   }

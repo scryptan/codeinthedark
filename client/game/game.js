@@ -101,7 +101,9 @@ function waitReult(requestId) {
         clearInterval(pollingId);
         const state = await fetch("/api/state").then((r) => r.json());
 
-        alert(JSON.stringify(state.codeCheckerResults[PLAYER], null, 2));
+        const result = state.codeCheckerResults[PLAYER];
+        // Show human-facing error with real newlines (JSON.stringify escapes them).
+        alert(result?.error || JSON.stringify(result, null, 2));
         runButton.textContent = "► Run"
         runButton.disabled = false;
         runButton.hidden = false;

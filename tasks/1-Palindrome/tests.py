@@ -4,54 +4,64 @@ from solution import solve
 
 class PalindromeTests(unittest.TestCase):
     # Public tests
+    def assert_case(self, input_string: str, expected: bool):
+        actual = solve(input_string)
+        input_display = repr(input_string).replace("\n", "\\n")
+        # Provide a concise case line for the checker output.
+        self.assertEqual(
+            actual,
+            expected,
+            f"{input_display} -> expected {expected}, actual {actual}",
+        )
+
     def test_empty_string(self):
-        self.assertTrue(solve(""))
+        self.assert_case("", True)
 
     def test_single_char(self):
-        self.assertTrue(solve("a"))
+        self.assert_case("a", True)
 
     def test_not_palindrome(self):
-        self.assertFalse(solve("hello world"))
+        self.assert_case("hello world", False)
 
     def test_simple_palindrome(self):
-        self.assertTrue(solve("racecar"))
+        self.assert_case("racecar", True)
 
     def test_ignore_punctuation_and_case(self):
-        self.assertTrue(solve("A man, a plan, a canal: Panama"))
+        self.assert_case("A man, a plan, a canal: Panama", True)
 
     def test_ignore_apostrophes(self):
-        self.assertTrue(solve("No 'x' in Nixon"))
+        self.assert_case("No 'x' in Nixon", True)
 
     def test_numeric_palindrome_inside(self):
-        self.assertTrue(solve("n8n"))
+        self.assert_case("n8n", True)
 
     # Private tests
     def test_another_simple_palindrome(self):
-        self.assertTrue(solve("madam"))
+        self.assert_case("madam", True)
 
     def test_longer_non_palindrome(self):
-        self.assertFalse(solve("programming"))
+        self.assert_case("programming", False)
 
     def test_complex_sentence(self):
-        self.assertTrue(solve("Was it a car or a cat I saw?"))
+        self.assert_case("Was it a car or a cat I saw?", True)
 
     def test_numeric_palindrome(self):
-        self.assertTrue(solve("12321"))
+        self.assert_case("12321", True)
 
     def test_numeric_non_palindrome(self):
-        self.assertFalse(solve("12345"))
+        self.assert_case("12345", False)
 
     def test_spaces_only(self):
-        self.assertTrue(solve("   "))
+        self.assert_case("   ", True)
 
     def test_space_between_chars(self):
-        self.assertTrue(solve("a a"))
+        self.assert_case("a a", True)
 
     def test_uppercase_single_char(self):
-        self.assertTrue(solve("A"))
+        self.assert_case("A", True)
 
     def test_mixed_case_two_chars(self):
-        self.assertTrue(solve("Aa"))
+        self.assert_case("Aa", True)
 
 
 if __name__ == "__main__":
