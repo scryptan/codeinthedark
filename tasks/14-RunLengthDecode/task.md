@@ -1,0 +1,5 @@
+"" -> ""
+"a" -> "a"
+"a3b2c" -> "aaabbc"
+"x10" -> "xxxxxxxxxx"
+"a2bc3" -> "aabccc"

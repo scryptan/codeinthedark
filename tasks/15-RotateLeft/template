@@ -1,0 +1,3 @@
+def solve(input_array: list[int], input_int: int) -> list[int]:
+    # TODO: implement solution
+    pass
