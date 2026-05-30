@@ -61,7 +61,7 @@ apiRouter.get("/tasks", async (req, res) => {
   res.json(
     tasks.map((x) => ({
       name: x,
-      url: `http://${LOCAL_IP}:${PORT}/tasks/${x}/task.png`    
+      url: `/tasks/${x}/task.png`    
     })),
   );
 });
