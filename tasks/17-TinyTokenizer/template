@@ -1,0 +1,3 @@
+def solve(prompt: str) -> int:
+    # TODO: implement solution
+    pass

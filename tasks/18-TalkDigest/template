@@ -1,0 +1,3 @@
+def solve(messages: list[str], name: str) -> list[str]:
+    # TODO: implement solution
+    pass
