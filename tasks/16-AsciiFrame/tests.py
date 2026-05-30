@@ -1,4 +1,5 @@
 import unittest
+
 from solution import solve
 
 
@@ -35,10 +36,23 @@ class AsciiFrameTests(unittest.TestCase):
         self.assert_case(4, ["####", "#..#", "#..#", "####"])
 
     def test_six(self):
-        self.assert_case(6, ["######", "#....#", "#....#", "#....#", "#....#", "######"])
+        self.assert_case(
+            6, ["######", "#....#", "#....#", "#....#", "#....#", "######"]
+        )
 
     def test_seven(self):
-        self.assert_case(7, ["#######", "#.....#", "#.....#", "#.....#", "#.....#", "#.....#", "#######"])
+        self.assert_case(
+            7,
+            [
+                "#######",
+                "#.....#",
+                "#.....#",
+                "#.....#",
+                "#.....#",
+                "#.....#",
+                "#######",
+            ],
+        )
 
 
 if __name__ == "__main__":
