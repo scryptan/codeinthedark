@@ -10,7 +10,7 @@ export const TASKS_DIR = resolve(__dirname, "../../tasks");
 export async function getTasks() {
   const dirs = await readdir(TASKS_DIR);
   return dirs
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
 }
 
 export async function checkTask(taskId) {
