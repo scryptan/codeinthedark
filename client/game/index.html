@@ -9,6 +9,11 @@
   <body>
     <div class="timer" id="timer">Waiting for the start…</div>
     <div class="editor" id="editor"></div>
+    <details class="test-result" id="testResultPanel" hidden>
+      <summary class="test-result__summary" id="testResultSummary"></summary>
+      <button class="test-result__close" id="testResultClose" type="button" aria-label="Hide test result">×</button>
+      <pre class="test-result__body" id="testResultBody"></pre>
+    </details>
     <button class="runCode" id="runCode" hidden>► Run</button>
     <img class="reference-image" id="ref" alt="" />
 

@@ -3,11 +3,16 @@ import { emmetHTML } from "emmet-monaco-es";
 
 import { formatTime } from "../utils/formatTime";
 import HtmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import { formatRunResult } from "./run-result";
 
 const params = new URLSearchParams(location.search);
 const timerEl = document.getElementById("timer");
 const refImg = document.getElementById("ref");
 const runButton = document.getElementById("runCode");
+const testResultPanel = document.getElementById("testResultPanel");
+const testResultSummary = document.getElementById("testResultSummary");
+const testResultClose = document.getElementById("testResultClose");
+const testResultBody = document.getElementById("testResultBody");
 
 let PLAYER =
   Number(params.get("player")) || Number(localStorage.getItem("player"));
@@ -46,6 +51,26 @@ editor.onDidChangeModelContent(() => {
 
 let currentTaskId = null;
 
+function clearTestResult() {
+  testResultPanel.hidden = true;
+  testResultPanel.open = false;
+  testResultPanel.className = "test-result";
+  testResultSummary.textContent = "";
+  testResultBody.textContent = "";
+}
+
+function showTestResult(result) {
+  const formatted = formatRunResult(result);
+
+  testResultPanel.hidden = false;
+  testResultPanel.open = true;
+  testResultPanel.className = `test-result test-result--${formatted.variant}`;
+  testResultSummary.textContent = formatted.title;
+  testResultBody.textContent = formatted.body;
+}
+
+testResultClose.onclick = clearTestResult;
+
 async function poll() {
   try {
     const state = await fetch("/api/state").then((r) => r.json());
@@ -62,6 +87,7 @@ async function poll() {
       const t = tasks.find((x) => x.name === state.taskId);
       refImg.src = t ? t.url : "";
       editor.setValue(state.codes[PLAYER] || "");
+      clearTestResult();
       runButton.textContent = "► Run"
       runButton.disabled = false;
       runButton.hidden = false;
@@ -102,8 +128,7 @@ function waitReult(requestId) {
         const state = await fetch("/api/state").then((r) => r.json());
 
         const result = state.codeCheckerResults[PLAYER];
-        // Show human-facing error with real newlines (JSON.stringify escapes them).
-        alert(result?.error || JSON.stringify(result, null, 2));
+        showTestResult(result);
         runButton.textContent = "► Run"
         runButton.disabled = false;
         runButton.hidden = false;
